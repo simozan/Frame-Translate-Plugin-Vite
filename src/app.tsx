@@ -1,43 +1,53 @@
-import { useState } from 'preact/hooks'
-import preactLogo from './assets/preact.svg'
-import viteLogo from '/vite.svg'
+import { useEffect } from 'preact/hooks';
+
 import './app.css'
 
 export function App() {
-  const [count, setCount] = useState(0)
+
+  function handleOnChange(event:MessageEvent) {
+     if (event.data.pluginMessage?.type === "populate-frames") {
+        const frameDropdown = document.getElementById("frame-select") as HTMLSelectElement;
+        frameDropdown.innerHTML = ""; // Clear previous options
+
+        event.data.pluginMessage.frames.forEach((frame: { id: string, name: string}) => {
+          const option = document.createElement("option");
+          option.value = frame.id;
+          option.text = frame.name;
+          frameDropdown.add(option);
+        });
+      }
+  }
+
+  useEffect(() => {
+    window.addEventListener("message", handleOnChange);
+
+    return () => window.removeEventListener("message", handleOnChange);
+  }, []);
+
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} class="logo" alt="Vite logo" />
-        </a>
-        <a href="https://preactjs.com" target="_blank">
-          <img src={preactLogo} class="logo preact" alt="Preact logo" />
-        </a>
-      </div>
-      <h1>Vite + Preact</h1>
-      <div class="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/app.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p>
-        Check out{' '}
-        <a
-          href="https://preactjs.com/guide/v10/getting-started#create-a-vite-powered-preact-app"
-          target="_blank"
-        >
-          create-preact
-        </a>
-        , the official Preact + Vite starter
-      </p>
-      <p class="read-the-docs">
-        Click on the Vite and Preact logos to learn more
-      </p>
+    <div class="popup">
+    <h1>Translate Text</h1>
+    <label for="frame-select">Select Frame:</label>
+    <select id="frame-select">
+  
+    </select>
+
+    <label for="language-select">Select Language:</label>
+    <select id="language-select">
+      <option value="en">English</option>
+      <option value="es">Spanish</option>
+      <option value="fr">French</option>
+      <option value="de">German</option>
+
+    </select>
+
+    <button id="translate-button">Translate</button>
+    <button id="cancel-button">Cancel</button>
+
+    <div id="translation-result" class="result"></div>
+  </div>
     </>
   )
 }
