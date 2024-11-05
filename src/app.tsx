@@ -28,7 +28,7 @@ export function App() {
   return (
     <>
     <div class="popup">
-    <h1>Translate Text</h1>
+    <h3>Translate Text</h3>
     <label for="frame-select">Select Frame:</label>
     <select id="frame-select">
   
@@ -44,6 +44,7 @@ export function App() {
     </select>
 
     <button id="translate-button">Translate</button>
+    <button id="edit-button">Edit</button>
     <button id="cancel-button">Cancel</button>
 
     <div id="translation-result" class="result"></div>

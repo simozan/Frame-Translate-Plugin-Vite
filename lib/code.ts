@@ -7,31 +7,39 @@
 // full browser environment (See https://www.figma.com/plugin-docs/how-plugins-run).
 
 // This shows the HTML page in "ui.html".
-figma.showUI(__html__);
+figma.showUI(__html__, {
+  height: 500,
+  width: 500,
+});
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
 // posted message.
-figma.ui.onmessage =  (msg: {type: string, count: number}) => {
-  // One way of distinguishing between different types of messages sent from
-  // your HTML page is to use an object with a "type" property like this.
-  if (msg.type === 'create-shapes') {
-    // This plugin creates rectangles on the screen.
-    const numberOfRectangles = msg.count;
+figma.ui.onmessage =  async (msg) => {
 
-    const nodes: SceneNode[] = [];
-    for (let i = 0; i < numberOfRectangles; i++) {
-      const rect = figma.createRectangle();
-      rect.x = i * 150;
-      rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0.5, b: 0 } }];
-      figma.currentPage.appendChild(rect);
-      nodes.push(rect);
+  if(msg.type === 'translate') {
+    const selectedFrameId = msg.frameId;
+    const targetLanguage = msg.language;
+
+    const selectedFrame = figma.getNodeById(selectedFrameId) as FrameNode;
+     
+    if (selectedFrame && selectedFrame.type === 'FRAME') {
+      const textNodes = selectedFrame.findAll(node => node.type === 'TEXT') as TextNode[];
+      let originalTexts = textNodes.map(node => node.characters);
+
+      const tarnslatedTexts = originalTexts.map(text => `[Translated ${targetLanguage}]: ${text}`);
+
+      textNodes.forEach((node, index) => {
+        node.characters = tarnslatedTexts[index];
+      });
+
+      figma.ui.postMessage({ type: 'translation-done' });
     }
-    figma.currentPage.selection = nodes;
-    figma.viewport.scrollAndZoomIntoView(nodes);
   }
 
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
-  figma.closePlugin();
-};
+  if (msg.type ==='cancel') {
+    figma.closePlugin();
+  }
+
+
+}
