@@ -7,39 +7,57 @@
 // full browser environment (See https://www.figma.com/plugin-docs/how-plugins-run).
 
 // This shows the HTML page in "ui.html".
+// Show the plugin UI
 figma.showUI(__html__, {
   height: 500,
   width: 500,
 });
 
-// Calls to "parent.postMessage" from within the HTML page will trigger this
-// callback. The callback will be passed the "pluginMessage" property of the
-// posted message.
-figma.ui.onmessage =  async (msg) => {
+const originalTextMap = new Map<string, string>();
 
-  if(msg.type === 'translate') {
-    const selectedFrameId = msg.frameId;
-    const targetLanguage = msg.language;
+figma.ui.onmessage = async (msg) => {
+  const selection = figma.currentPage.selection;
 
-    const selectedFrame = figma.getNodeById(selectedFrameId) as FrameNode;
-     
-    if (selectedFrame && selectedFrame.type === 'FRAME') {
-      const textNodes = selectedFrame.findAll(node => node.type === 'TEXT') as TextNode[];
-      let originalTexts = textNodes.map(node => node.characters);
+  if (msg.type === "translate") {
 
-      const tarnslatedTexts = originalTexts.map(text => `[Translated ${targetLanguage}]: ${text}`);
+     const targetLanguage = msg.language;
 
-      textNodes.forEach((node, index) => {
-        node.characters = tarnslatedTexts[index];
-      });
+    for (const node of selection) {
+      if (node.type === "FRAME") {
+        const textNodes = node.findAll((child) => child.type === "TEXT") as TextNode[];
 
-      figma.ui.postMessage({ type: 'translation-done' });
+        // The necessary font before changing text
+        await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+
+        // Translate to "Gleef Translate"
+        for (const textNode of textNodes) {
+
+          originalTextMap.set(textNode.id, textNode.characters);
+          textNode.characters = ` "Gleef Translate"`;
+          // textNode.characters = `Translated to ${targetLanguage}: ${textNode.characters}`;
+
+          // textNode.characters = "Gleef Translate";
+        }
+      }
     }
   }
 
-  if (msg.type ==='cancel') {
-    figma.closePlugin();
+  if (msg.type === "edit") {
+    for (const node of selection) {
+      if (node.type === "FRAME") {
+        const textNodes = node.findAll((child) => child.type === "TEXT") as TextNode[];
+
+        // Select each text node 
+        figma.currentPage.selection = textNodes;
+        figma.viewport.scrollAndZoomIntoView(textNodes);
+        figma.notify("Text is now editable. Click on a text field to type.");
+      }
+    }
   }
 
+  if (msg.type === "cancel") {
+    figma.closePlugin();
+  }
+};
 
-}
+

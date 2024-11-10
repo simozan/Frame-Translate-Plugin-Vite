@@ -1,54 +1,47 @@
-import { useEffect } from 'preact/hooks';
-
-import './app.css'
+import { useState } from "preact/hooks";
+import "./app.css";
 
 export function App() {
+  const [language, setLanguage] = useState("en");
 
-  function handleOnChange(event:MessageEvent) {
-     if (event.data.pluginMessage?.type === "populate-frames") {
-        const frameDropdown = document.getElementById("frame-select") as HTMLSelectElement;
-        frameDropdown.innerHTML = ""; // Clear previous options
-
-        event.data.pluginMessage.frames.forEach((frame: { id: string, name: string}) => {
-          const option = document.createElement("option");
-          option.value = frame.id;
-          option.text = frame.name;
-          frameDropdown.add(option);
-        });
-      }
+  function translateText() {
+    console.log("Selected language: ", language);
+    parent.postMessage({ pluginMessage: { type: "translate", language: language  } }, "*");
   }
 
-  useEffect(() => {
-    window.addEventListener("message", handleOnChange);
+  function editText() {
+    parent.postMessage({ pluginMessage: { type: "edit" } }, "*");
+  }
 
-    return () => window.removeEventListener("message", handleOnChange);
-  }, []);
+  function handleCancel() {
+    parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
+  }
 
+   const handleLanguageChange = (e: Event) => {
+    const target = e.target as HTMLSelectElement;
+    setLanguage(target.value);
+  };
 
   return (
     <>
-    <div class="popup">
-    <h3>Translate Text</h3>
-    <label for="frame-select">Select Frame:</label>
-    <select id="frame-select">
-  
-    </select>
+      <h2>"Gleef Translate"</h2>
+      <p>Select a frame and translate the text to "Gleef Translate"</p>
 
-    <label for="language-select">Select Language:</label>
-    <select id="language-select">
-      <option value="en">English</option>
-      <option value="es">Spanish</option>
-      <option value="fr">French</option>
-      <option value="de">German</option>
+      <label htmlFor="language-select">Choose a language:</label>
+      <select
+        id="language-select"
+        value={language}
+        onChange={handleLanguageChange}
+      >
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+      </select>
 
-    </select>
-
-    <button id="translate-button">Translate</button>
-    <button id="edit-button">Edit</button>
-    <button id="cancel-button">Cancel</button>
-
-    <div id="translation-result" class="result"></div>
-  </div>
+      <button id="translate-text" onClick={translateText}>Translate</button>
+      <button id="edit-text" onClick={editText}>Edit</button>
+      <button id="cancel" onClick={handleCancel}>Cancel</button>
     </>
-  )
+  );
 }
