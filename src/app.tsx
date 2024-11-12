@@ -1,12 +1,74 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { createClient } from "@supabase/supabase-js";
 import "./app.css";
 
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+);
 export function App() {
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState<string>("en");
+
+  const validateLanguage = (language: string) => {
+    const supportedLanguage = ["en", "es", "fr", "de"];
+    return supportedLanguage.includes(language);
+  }
+  
+
+  const createRecord = async (originalText: string) => {
+    if (!validateLanguage(language)) {
+      console.log("Unsupported language selected:", language);
+      return;
+    }
+    try {
+      const { data } = await supabase
+        .from("translations")
+        .insert([{
+            original_text: originalText,
+            translated_text: "Gleef Translate",  
+            language,
+            validated: true,
+        }]);
+        console.log("Record added:", data);
+    } catch (error) {
+      console.log("Error adding record:", error);
+    }
+  }
+
+  const getRecord = async () => {
+    try {
+       await supabase
+      .from("translations")
+      .select("*");
+      
+    } catch (error) {
+      console.log("Error fetching records:", error);
+    }
+  }
+
+  useEffect(()=> {
+    getRecord();
+  }, [])
 
   function translateText() {
     console.log("Selected language: ", language);
-    parent.postMessage({ pluginMessage: { type: "translate", language: language  } }, "*");
+    
+    parent.postMessage({ pluginMessage: { type: "getOriginalText" } }, "*");
+
+     window.onmessage = async (event) => {
+      const { pluginMessage } = event.data;
+
+      if (pluginMessage?.type === "originalText") {
+        const originalText = pluginMessage.text;
+        console.log("Original text received:", originalText);
+
+        // Store original text along with translation in Supabase
+        createRecord(originalText);
+
+        // Send translate message to Figma plugin
+        parent.postMessage({ pluginMessage: { type: "translate", language } }, "*");
+      }
+    };
   }
 
   function editText() {

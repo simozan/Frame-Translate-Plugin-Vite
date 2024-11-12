@@ -18,8 +18,27 @@ const originalTextMap = new Map<string, string>();
 figma.ui.onmessage = async (msg) => {
   const selection = figma.currentPage.selection;
 
-  if (msg.type === "translate") {
 
+  
+  if ( msg.type === "getOriginalText") {
+    let originalText = "";
+
+    for  (const node of selection) {
+      if (node.type === "FRAME") {
+        const textNodes = node.findAll((child) => child.type === "TEXT") as TextNode[];
+        originalText = textNodes.map((textNode) => textNode.characters).join(" ");
+        break;
+      }
+    }
+
+    figma.ui.postMessage({ type: "originalText", text: originalText });
+  }
+
+
+
+  if (msg.type === "translate") {
+     
+    //**** */
      const targetLanguage = msg.language;
 
     for (const node of selection) {
@@ -29,14 +48,15 @@ figma.ui.onmessage = async (msg) => {
         // The necessary font before changing text
         await figma.loadFontAsync({ family: "Inter", style: "Regular" });
 
-        // Translate to "Gleef Translate"
+        // Translate to "Gleef Translate" &&  Translate and save to Supabase
         for (const textNode of textNodes) {
 
           originalTextMap.set(textNode.id, textNode.characters);
-          textNode.characters = ` "Gleef Translate"`;
-          // textNode.characters = `Translated to ${targetLanguage}: ${textNode.characters}`;
+          const translatedText = `Gleef Translate`;
 
-          // textNode.characters = "Gleef Translate";
+          // Update text in Figma
+          textNode.characters = translatedText;
+
         }
       }
     }
